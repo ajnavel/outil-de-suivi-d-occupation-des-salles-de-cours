@@ -5,3 +5,5 @@ var Radio = {
     }
 }
 module.exports = Radio
+
+console.log("Blue level checked".blue)
