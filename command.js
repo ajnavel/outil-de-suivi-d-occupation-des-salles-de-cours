@@ -5,3 +5,5 @@ var Command = {
     }
 }
 module.exports = Command
+
+console.log("Blue level checked".blue)
