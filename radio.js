@@ -1,7 +1,7 @@
-var radio = {
+var Radio = {
 check: function(){
-console.log("radio Ready !")
+console.log("Radio Ready !")
 return true
 }
 }
-module.exports = radio
+module.exports = Radio

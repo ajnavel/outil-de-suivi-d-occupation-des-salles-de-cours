@@ -1,7 +1,7 @@
-var command = {
+var Command = {
 check: function(){
-console.log("command Ready !")
+console.log("Command Ready !")
 return true
 }
 }
-module.exports = command
+module.exports = Command
