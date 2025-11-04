@@ -5,3 +5,4 @@ var Engine = {
     }
 }
 module.exports = Engine
+console.log("Gray level checked".gray)
