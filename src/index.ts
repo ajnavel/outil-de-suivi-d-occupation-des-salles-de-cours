@@ -141,7 +141,63 @@ async function main() {
                 }
                 break;
 
-            
+            // EFO2 : VISUALISATION DÉTAILLÉE
+            case 'view':
+                // 1. Sélectionner la question à voir
+                // On crée une liste d'options pour le select
+                const viewOptions = exam.questions.map((q, idx) => ({
+                    value: idx,
+                    label: `${idx + 1}. ${q.title.slice(0, 60)}${q.title.length > 60 ? '...' : ''}`
+                }));
+
+                // On ajoute une option retour
+                viewOptions.push({ value: -1, label: '⬅ Back to menu' });
+
+                const selectedId = await select({
+                    message: 'Select a question to view details:',
+                    options: viewOptions,
+                });
+
+                // Si l'utilisateur annule ou choisit retour
+                if (selectedId === -1 || typeof selectedId !== 'number') break;
+
+                // Affichage détaillé (Conforme EFO2 : texte, type, réponses, feedback)
+                const q = exam.questions[selectedId];
+
+                console.log('\n' + '─'.repeat(50));
+                console.log(`🔍 DETAILS FOR QUESTION #${selectedId + 1}`);
+                console.log('─'.repeat(50));
+                console.log(`Title:    ${q.title}`);
+                console.log(`Type:     ${q.type}`);
+                console.log(`Format:   ${q.format}`);
+                console.log('─'.repeat(20));
+                console.log(`Text:\n${q.text}`);
+                console.log('─'.repeat(20));
+                console.log('Answers:');
+
+                if (q.answers.length === 0) {
+                    console.log('  (No answers / Open question)');
+                } else {
+                    q.answers.forEach((ans, i) => {
+                        // Symbole visuel pour Vrai/Faux ou Bonne/Mauvaise
+                        const icon = ans.isCorrect ? '✅' : '❌';
+                        let ansText = `  ${icon} ${ans.text}`;
+
+                        if (ans.weight) ansText += ` (Weight: ${ans.weight}%)`;
+                        if (ans.matchText) ansText += ` -> Matches with: "${ans.matchText}"`;
+
+                        console.log(ansText);
+
+                        // Afficher le feedback s'il existe
+                        if (ans.feedback) {
+                            console.log(`      ↳ 💬 Feedback: ${ans.feedback}`);
+                        }
+                    });
+                }
+                console.log('─'.repeat(50) + '\n');
+
+                await text({ message: 'Press Enter to return to menu...', placeholder: '' });
+                break;
 
             case 'exit':
                 console.log("Goodbye!");
