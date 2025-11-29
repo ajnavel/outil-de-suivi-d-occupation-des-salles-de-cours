@@ -1,6 +1,7 @@
 import { parseGiftFile } from "./parser";
 import * as fs from 'fs';
 import { intro, outro, select, spinner, text } from '@clack/prompts';
+import { GiftExporter } from "./writer"; 
 
 async function main() {
 
@@ -12,6 +13,7 @@ async function main() {
         options: [
             { value: 'edit', label: 'Edit an existing Gift file' },
             { value: 'new', label: 'Create a new Gift file' },
+            { value: 'export', label: 'Export exam to GIFT file' },
         ],
     });
 
@@ -56,6 +58,43 @@ async function main() {
                 { value: 'exit', label: 'Exit' },
             ],
         }) as string
+
+        switch (action) {
+        case 'export':
+            const exportPath = await text({
+                message: 'Where do you want to save the GIFT file?',
+                placeholder: './my-exam.gift',
+                validate(value) {
+                    if (!value.endsWith('.gift')) return 'File must end with .gift';
+                },
+            });
+
+            if (typeof exportPath === 'string') {
+                const s = spinner();
+                s.start('Saving file...');
+                
+                const success = GiftExporter.save(exam, exportPath);
+                
+                if (success) {
+                    s.stop(`Successfully saved exam to ${exportPath}`);
+                } else {
+                    s.stop('Export failed (check criteria or permissions)');
+                }
+            }
+            break;
+
+        case 'list':
+            // Exemple simple pour lister (utile pour vérifier avant export)
+            console.log('\n--- Current Exam Questions ---');
+            exam.questions.forEach((q, idx) => {
+                console.log(`${idx + 1}. [${q.type}] ${q.title}`);
+            });
+            break;
+            
+        case 'exit':
+            console.log("Goodbye!");
+            process.exit(0);
+    }
     }
 
     outro(`Thank you for using SRYEM Gift File editor !`);
