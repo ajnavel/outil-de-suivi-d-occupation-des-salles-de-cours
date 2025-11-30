@@ -271,6 +271,85 @@ async function main() {
                 }
                 break;
                 
+            
+            // AJOUT (EFO3 : Selection / Ajout)
+            case 'add':
+                const addMethod = await select({
+                    message: 'How do you want to add a question?',
+                    options: [
+                        { value: 'bank', label: '📂 Import from another GIFT file (Question Bank)' },
+                        { value: 'manual', label: '✍️ Create manually (Simple)' },
+                        { value: 'cancel', label: '⬅ Cancel' }
+                    ]
+                });
+
+                if (addMethod === 'bank') {
+                    // EFO3 : Sélection depuis une banque
+                    const bankPath = await text({
+                        message: 'Path to the GIFT file (Bank):',
+                        placeholder: './SujetB_data/U5-p57-Review.gift',
+                        validate(value) {
+                            if (!fs.existsSync(value)) return 'File not found';
+                        }
+                    });
+
+                    if (typeof bankPath === 'string') {
+                        const sBank = spinner();
+                        sBank.start('Loading bank...');
+                        const bankExam = parseGiftFile(bankPath);
+                        sBank.stop(`Loaded ${bankExam.questions.length} questions from bank.`);
+
+                        const qIndexToAdd = await select({
+                            message: 'Select a question to IMPORT:',
+                            options: [
+                                ...bankExam.questions.map((q, idx) => ({
+                                    value: idx,
+                                    label: `${q.title} (${q.type})`
+                                })),
+                                { value: -1, label: '⬅ Cancel' }
+                            ]
+                        });
+
+                        if (typeof qIndexToAdd === 'number' && qIndexToAdd !== -1) {
+                            const selectedQ = bankExam.questions[qIndexToAdd];
+                            // On vérifie les doublons (EFO4)
+                            if (exam.addQuestion(selectedQ)) {
+                                console.log(`✅ Successfully added "${selectedQ.title}" to the exam.`);
+                            } else {
+                                console.log(`⚠️ Error: This question is already in the exam (Duplicate).`);
+                            }
+                        }
+                    }
+
+                } else if (addMethod === 'manual') {
+                    const qType = await select({
+                        message: 'Question Type:',
+                        options: [
+                            { value: QuestionType.Essay, label: 'Essay (Open question)' },
+                            { value: QuestionType.TrueFalse, label: 'True / False' },
+                            { value: QuestionType.Description, label: 'Description (Instruction)' }
+                        ]
+                    });
+
+                    const qTitle = await text({ message: 'Title:', placeholder: 'New Question' }) as string;
+                    const qText = await text({ message: 'Question Text:', placeholder: 'What is...?' }) as string;
+                    
+                    const newQ = new Question(qTitle, qText, qType as QuestionType);
+
+                    // Si Vrai/Faux, on demande la réponse
+                    if (qType === QuestionType.TrueFalse) {
+                        const tfVal = await select({
+                            message: 'Correct Answer:',
+                            options: [{ value: true, label: 'TRUE' }, { value: false, label: 'FALSE' }]
+                        });
+                        newQ.answers.push(new AnswerOption(tfVal ? "TRUE" : "FALSE", tfVal as boolean));
+                    }
+
+                    exam.addQuestion(newQ);
+                    console.log("✅ New question created and added.");
+                }
+                break;
+
             case 'exit':
                 console.log("Goodbye!");
                 process.exit(0);
