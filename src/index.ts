@@ -120,21 +120,33 @@ async function main() {
             // EFO1 : RECHERCHE PAR MOT-CLÉ
             case 'search':
                 const searchPattern = await text({
-                    message: 'Enter a keyword to search (title or text):',
+                    message: 'Enter a keyword to search:',
                     placeholder: 'grammar',
                     validate: (val) => val.length < 2 ? 'Please enter at least 2 characters' : undefined
                 });
 
                 if (typeof searchPattern === 'string') {
-                    // Filtrage insensible à la casse
-                    const matches = exam.questions.filter(q =>
-                        (q.title && q.title.toLowerCase().includes(searchPattern.toLowerCase())) ||
-                        (q.text && q.text.toLowerCase().includes(searchPattern.toLowerCase()))
-                    );
+                    const term = searchPattern.toLowerCase();
+
+                    const matches = exam.questions.filter(q => {
+                        // 1. Chercher dans le Titre
+                        const inTitle = q.title && q.title.toLowerCase().includes(term);
+                        
+                        // 2. Chercher dans le Texte (Enoncé)
+                        const inText = q.text && q.text.toLowerCase().includes(term);
+                        
+                        // 3. Chercher dans les Réponses (Answers)
+                        const inAnswers = q.answers.some(ans => 
+                            ans.text.toLowerCase().includes(term) || 
+                            (ans.feedback && ans.feedback.toLowerCase().includes(term))
+                        );
+
+                        return inTitle || inText || inAnswers;
+                    });
 
                     console.log(`\nFound ${matches.length} matching question(s):`);
                     matches.forEach((q, index) => {
-                        // On affiche l'index réel dans la liste principale pour référence
+                        // On récupère le vrai index pour que l'ID soit correct
                         const realIndex = exam.questions.indexOf(q);
                         console.log(`[ID: ${realIndex + 1}] ${q.title} (${q.type})`);
                     });
