@@ -165,7 +165,7 @@ async function main() {
                 const q = exam.questions[selectedId];
 
                 console.log('\n' + '─'.repeat(50));
-                console.log(`🔍 DETAILS FOR QUESTION #${selectedId + 1}`);
+                console.log(`DETAILS FOR QUESTION #${selectedId + 1}`);
                 console.log('─'.repeat(50));
                 console.log(`Title:    ${q.title}`);
                 console.log(`Type:     ${q.type}`);
@@ -179,8 +179,7 @@ async function main() {
                     console.log('  (No answers / Open question)');
                 } else {
                     q.answers.forEach((ans, i) => {
-                        // Symbole visuel pour Vrai/Faux ou Bonne/Mauvaise
-                        const icon = ans.isCorrect ? '✅' : '❌';
+                        const icon = ans.isCorrect ? 'T' : 'F';
                         let ansText = `  ${icon} ${ans.text}`;
 
                         if (ans.weight) ansText += ` (Weight: ${ans.weight}%)`;
@@ -202,7 +201,7 @@ async function main() {
             // DELETE
             case 'delete':
                 if (exam.questions.length === 0) {
-                    console.log("❌ The exam is empty. Nothing to delete.");
+                    console.log("The exam is empty. Nothing to delete.");
                     break;
                 }
 
@@ -219,7 +218,7 @@ async function main() {
 
                 if (typeof deleteId === 'number' && deleteId !== -1) {
                     const removed = exam.questions.splice(deleteId, 1);
-                    console.log(`✅ Deleted: "${removed[0].title}"`);
+                    console.log(`Deleted: "${removed[0].title}"`);
                 }
                 break;
 
@@ -227,7 +226,7 @@ async function main() {
             // EDIT
             case 'edit':
                 if (exam.questions.length === 0) {
-                    console.log("❌ The exam is empty.");
+                    console.log("The exam is empty.");
                     break;
                 }
 
@@ -267,7 +266,7 @@ async function main() {
                         });
                         if (typeof newText === 'string') qToEdit.text = newText;
                     }
-                    console.log("✅ Question updated.");
+                    console.log("Question updated.");
                 }
                 break;
                 
@@ -277,8 +276,8 @@ async function main() {
                 const addMethod = await select({
                     message: 'How do you want to add a question?',
                     options: [
-                        { value: 'bank', label: '📂 Import from another GIFT file (Question Bank)' },
-                        { value: 'manual', label: '✍️ Create manually (Simple)' },
+                        { value: 'bank', label: 'Import from another GIFT file (Question Bank)' },
+                        { value: 'manual', label: 'Create manually' },
                         { value: 'cancel', label: '⬅ Cancel' }
                     ]
                 });
@@ -314,9 +313,9 @@ async function main() {
                             const selectedQ = bankExam.questions[qIndexToAdd];
                             // On vérifie les doublons (EFO4)
                             if (exam.addQuestion(selectedQ)) {
-                                console.log(`✅ Successfully added "${selectedQ.title}" to the exam.`);
+                                console.log(`Successfully added "${selectedQ.title}" to the exam.`);
                             } else {
-                                console.log(`⚠️ Error: This question is already in the exam (Duplicate).`);
+                                console.log(`Error: This question is already in the exam (Duplicate).`);
                             }
                         }
                     }
@@ -346,7 +345,7 @@ async function main() {
                     }
 
                     exam.addQuestion(newQ);
-                    console.log("✅ New question created and added.");
+                    console.log("New question created and added.");
                 }
                 break;
 
