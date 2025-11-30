@@ -62,6 +62,73 @@ export class Question {
         this.format = format;
         this.category = category;
     }
+    
+    // Convertit la question en format texte GIFT
+    toGift(): string {
+        let output = "";
+
+        // 1. Titre (Optionnel mais recommandé)
+        if (this.title) {
+            output += `::${this.title}::`;
+        }
+
+        // 2. Format (Markdown/HTML/Moodle)
+        if (this.format && this.format !== "moodle") {
+            output += `[${this.format}]`;
+        }
+
+        // 3. Texte de la question
+        output += this.text;
+
+        // 4. Réponses
+        if (this.type === QuestionType.Description) {
+            // Pas de réponses pour une description
+            return output;
+        }
+
+        output += " {";
+
+        switch (this.type) {
+            case QuestionType.TrueFalse:
+                // Format: {T} ou {FALSE}
+                const isTrue = this.answers[0]?.isCorrect;
+                output += isTrue ? "TRUE" : "FALSE";
+                break;
+
+            case QuestionType.MultipleChoice:
+            case QuestionType.ShortAnswer:
+                // MC: { =Bonne ~Mauvaise }
+                // SA: { =Bonne1 =Bonne2 }
+                this.answers.forEach(ans => {
+                    const prefix = ans.isCorrect ? "=" : "~";
+                    output += `\n\t${prefix}${ans.text}`;
+                    if (ans.feedback) {
+                        output += `#${ans.feedback}`;
+                    }
+                });
+                break;
+
+            case QuestionType.Matching:
+                // Format: { =Question -> Answer }
+                this.answers.forEach(ans => {
+                    output += `\n\t=${ans.text} -> ${ans.matchText}`;
+                });
+                break;
+
+            case QuestionType.Numerical:
+                // Format: {#3.14}
+                if (this.answers.length > 0) {
+                    output += `#${this.answers[0].text}`;
+                }
+                break;
+            
+                case QuestionType.Essay:
+                break;
+        }
+
+        output += "\n}";
+        return output;
+    }
 
     // Helper to add answers during parsing
     addAnswer(answer: AnswerOption): void {
@@ -106,73 +173,7 @@ export class Question {
         );
     }
 
-    // Convertit la question en format texte GIFT
-    toGift(): string {
-        let output = "";
-        
-        // 1. Titre (Optionnel mais recommandé)
-        if (this.title) {
-            output += `::${this.title}::`;
-        }
 
-        // 2. Format (Markdown/HTML/Moodle)
-        if (this.format && this.format !== "moodle") {
-            output += `[${this.format}]`;
-        }
-
-        // 3. Texte de la question
-        output += this.text;
-
-        // 4. Réponses
-        if (this.type === QuestionType.Description) {
-            // Pas de réponses pour une description
-            return output; 
-        }
-
-        output += " {";
-
-        switch (this.type) {
-            case QuestionType.TrueFalse:
-                // Format: {T} ou {FALSE}
-                const isTrue = this.answers[0]?.isCorrect;
-                output += isTrue ? "TRUE" : "FALSE";
-                break;
-
-            case QuestionType.MultipleChoice:
-            case QuestionType.ShortAnswer:
-                // MC: { =Bonne ~Mauvaise }
-                // SA: { =Bonne1 =Bonne2 }
-                this.answers.forEach(ans => {
-                    const prefix = ans.isCorrect ? "=" : "~";
-                    output += `\n\t${prefix}${ans.text}`;
-                    if (ans.feedback) {
-                        output += `#${ans.feedback}`;
-                    }
-                });
-                break;
-
-            case QuestionType.Matching:
-                // Format: { =Question -> Réponse }
-                this.answers.forEach(ans => {
-                    output += `\n\t=${ans.text} -> ${ans.matchText}`;
-                });
-                break;
-
-            case QuestionType.Numerical:
-                // Format: {#3.14}
-                if (this.answers.length > 0) {
-                    output += `#${this.answers[0].text}`;
-                }
-                break;
-                
-            case QuestionType.Essay:
-                // Format: {} (laisser vide)
-                break;
-        }
-
-        output += "\n}";
-        return output;
-    }
 }
 
 // Represents the Exam (collection of questions)
@@ -204,7 +205,7 @@ export class Exam {
     card(): number {
         return this.questions.length;
     }
-    
+
     // Check if exam is valid for export
     isValid(): boolean {
         const count = this.card();

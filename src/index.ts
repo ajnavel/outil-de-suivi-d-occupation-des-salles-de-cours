@@ -1,3 +1,4 @@
+import { Exam, Question, QuestionType, AnswerOption } from './classes';
 import { parseGiftFile } from "./parser";
 import * as fs from 'fs';
 import { intro, outro, select, spinner, text } from '@clack/prompts';
@@ -90,7 +91,6 @@ async function main() {
                 break;
 
             case 'list':
-                // Exemple simple pour lister (utile pour vérifier avant export)
                 console.log('\n--- Current Exam Questions ---');
                 exam.questions.forEach((q, idx) => {
                     console.log(`${idx + 1}. [${q.type}] ${q.title}`);
@@ -197,6 +197,30 @@ async function main() {
                 console.log('─'.repeat(50) + '\n');
 
                 await text({ message: 'Press Enter to return to menu...', placeholder: '' });
+                break;
+
+            // DELETE
+            case 'delete':
+                if (exam.questions.length === 0) {
+                    console.log("❌ The exam is empty. Nothing to delete.");
+                    break;
+                }
+
+                const deleteId = await select({
+                    message: 'Select a question to DELETE:',
+                    options: [
+                        ...exam.questions.map((q, idx) => ({
+                            value: idx,
+                            label: `${idx + 1}. ${q.title} [${q.type}]`
+                        })),
+                        { value: -1, label: '⬅ Cancel' }
+                    ]
+                });
+
+                if (typeof deleteId === 'number' && deleteId !== -1) {
+                    const removed = exam.questions.splice(deleteId, 1);
+                    console.log(`✅ Deleted: "${removed[0].title}"`);
+                }
                 break;
 
             case 'exit':
