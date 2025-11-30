@@ -223,6 +223,54 @@ async function main() {
                 }
                 break;
 
+            
+            // EDIT
+            case 'edit':
+                if (exam.questions.length === 0) {
+                    console.log("❌ The exam is empty.");
+                    break;
+                }
+
+                const editId = await select({
+                    message: 'Select a question to EDIT:',
+                    options: [
+                        ...exam.questions.map((q, idx) => ({
+                            value: idx,
+                            label: `${idx + 1}. ${q.title}`
+                        })),
+                        { value: -1, label: '⬅ Cancel' }
+                    ]
+                });
+
+                if (typeof editId === 'number' && editId !== -1) {
+                    const qToEdit = exam.questions[editId];
+                    
+                    const field = await select({
+                        message: `Editing "${qToEdit.title}". What do you want to change?`,
+                        options: [
+                            { value: 'title', label: 'Title' },
+                            { value: 'text', label: 'Text (Enoncé)' },
+                            { value: 'cancel', label: 'Cancel' }
+                        ]
+                    });
+
+                    if (field === 'title') {
+                        const newTitle = await text({
+                            message: 'New Title:',
+                            initialValue: qToEdit.title
+                        });
+                        if (typeof newTitle === 'string') qToEdit.title = newTitle;
+                    } else if (field === 'text') {
+                        const newText = await text({
+                            message: 'New Text:',
+                            initialValue: qToEdit.text
+                        });
+                        if (typeof newText === 'string') qToEdit.text = newText;
+                    }
+                    console.log("✅ Question updated.");
+                }
+                break;
+                
             case 'exit':
                 console.log("Goodbye!");
                 process.exit(0);
