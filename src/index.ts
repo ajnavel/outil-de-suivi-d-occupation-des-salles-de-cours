@@ -1,6 +1,7 @@
 import { Exam, Question, QuestionType, AnswerOption } from './classes';
 import { parseGiftFile } from "./parser";
 import * as fs from 'fs';
+import * as path from 'path';
 import { intro, outro, select, spinner, text } from '@clack/prompts';
 import { GiftExporter } from "./writer";
 import { VCardGenerator } from "./vcard";
@@ -129,40 +130,40 @@ async function main() {
                     const term = searchPattern.toLowerCase();
 
                     const matches = exam.questions.filter(q => {
-                        // 1. Chercher dans le Titre
-                        const inTitle = q.title && q.title.toLowerCase().includes(term);
-                        
-                        // 2. Chercher dans le Texte (Enoncé)
-                        const inText = q.text && q.text.toLowerCase().includes(term);
-                        
-                        // 3. Chercher dans les Réponses (Answers)
-                        const inAnswers = q.answers.some(ans => 
-                            ans.text.toLowerCase().includes(term) || 
-                            (ans.feedback && ans.feedback.toLowerCase().includes(term))
+                        // 1. Titre et Texte
+                        const inHeader = (q.title && q.title.toLowerCase().includes(term)) ||
+                            (q.text && q.text.toLowerCase().includes(term));
+
+                        // 2. Réponses (Answers)
+                        const inAnswers = q.answers.some(ans =>
+                            // Cherche dans le texte de la réponse
+                            ans.text.toLowerCase().includes(term) ||
+                            // Cherche dans le feedback
+                            (ans.feedback && ans.feedback.toLowerCase().includes(term)) ||
+                            // Cherche dans la partie "Droite" des questions d'appariement (Ex: Japan -> TOKYO)
+                            (ans.matchText && ans.matchText.toLowerCase().includes(term))
                         );
 
-                        return inTitle || inText || inAnswers;
+                        return inHeader || inAnswers;
                     });
 
-                    console.log(`\nFound ${matches.length} matching question(s):`);
+                    console.log(`\n Found ${matches.length} matching question(s):`);
                     matches.forEach((q, index) => {
-                        // On récupère le vrai index pour que l'ID soit correct
                         const realIndex = exam.questions.indexOf(q);
-                        console.log(`[ID: ${realIndex + 1}] ${q.title} (${q.type})`);
+                        // On coupe le titre s'il est trop long
+                        const displayTitle = q.title.length > 50 ? q.title.substring(0, 50) + "..." : q.title;
+                        console.log(`   [ID: ${realIndex + 1}] [${q.type}] ${displayTitle}`);
                     });
                 }
                 break;
 
             // EFO2 : VISUALISATION DÉTAILLÉE
             case 'view':
-                // 1. Sélectionner la question à voir
-                // On crée une liste d'options pour le select
+                // 1. Sélection
                 const viewOptions = exam.questions.map((q, idx) => ({
                     value: idx,
-                    label: `${idx + 1}. ${q.title.slice(0, 60)}${q.title.length > 60 ? '...' : ''}`
+                    label: `${idx + 1}. [${q.type}] ${q.title.slice(0, 50)}`
                 }));
-
-                // On ajoute une option retour
                 viewOptions.push({ value: -1, label: '⬅ Back to menu' });
 
                 const selectedId = await select({
@@ -170,44 +171,66 @@ async function main() {
                     options: viewOptions,
                 });
 
-                // Si l'utilisateur annule ou choisit retour
                 if (selectedId === -1 || typeof selectedId !== 'number') break;
 
-                // Affichage détaillé (Conforme EFO2 : texte, type, réponses, feedback)
                 const q = exam.questions[selectedId];
 
-                console.log('\n' + '─'.repeat(50));
+                // 2. Affichage Header
+                console.log('\n' + '─'.repeat(60));
                 console.log(`DETAILS FOR QUESTION #${selectedId + 1}`);
-                console.log('─'.repeat(50));
-                console.log(`Title:    ${q.title}`);
+                console.log('─'.repeat(60));
                 console.log(`Type:     ${q.type}`);
-                console.log(`Format:   ${q.format}`);
-                console.log('─'.repeat(20));
-                console.log(`Text:\n${q.text}`);
-                console.log('─'.repeat(20));
-                console.log('Answers:');
+                console.log(`Title:    ${q.title}`);
+                console.log('─'.repeat(20) + ' Question Text ' + '─'.repeat(20));
+                console.log(q.text); // Affiche le texte brut (avec balises [html] si présentes, c'est normal)
+                console.log('─'.repeat(60));
 
-                if (q.answers.length === 0) {
-                    console.log('  (No answers / Open question)');
-                } else {
-                    q.answers.forEach((ans, i) => {
-                        const icon = ans.isCorrect ? 'T' : 'F';
-                        let ansText = `  ${icon} ${ans.text}`;
+                // 3. Affichage Réponses (Switch intelligent selon le type)
+                console.log('ANSWERS / CONTENT:');
 
-                        if (ans.weight) ansText += ` (Weight: ${ans.weight}%)`;
-                        if (ans.matchText) ansText += ` -> Matches with: "${ans.matchText}"`;
+                switch (q.type) {
+                    case QuestionType.Description:
+                        console.log("(Info / Description - No answers expected)");
+                        break;
+                    
+                    case QuestionType.Essay:
+                        console.log("(Essay - Open ended answer)");
+                        break;
 
-                        console.log(ansText);
+                    case QuestionType.Matching:
+                        q.answers.forEach(ans => {
+                            // Affiche :  Left term  ---->  Right term
+                            console.log(` ${ans.text.padEnd(20)} ---->  ${ans.matchText}`);
+                        });
+                        break;
 
-                        // Afficher le feedback s'il existe
-                        if (ans.feedback) {
-                            console.log(`      ↳ 💬 Feedback: ${ans.feedback}`);
+                    case QuestionType.TrueFalse:
+                        const correctVal = q.answers.find(a => a.isCorrect)?.text;
+                        console.log(`   Correct Answer: ${correctVal?.toUpperCase()}`);
+                        break;
+                    
+                    case QuestionType.Numerical:
+                         console.log(`   Value: ${q.answers[0]?.text}`);
+                         break;
+
+                    default: 
+                        // Cas standard (QCM, Short Answer)
+                        if (q.answers.length === 0) {
+                            console.log('   (No answers defined)');
+                        } else {
+                            q.answers.forEach(ans => {
+                                const icon = ans.isCorrect ? 'T' : 'F';
+                                let ansText = `   ${icon} ${ans.text}`;
+                                if (ans.weight) ansText += ` (Partial credit: ${ans.weight}%)`;
+                                console.log(ansText);
+                                if (ans.feedback) console.log(`      ↳ 💬 Feedback: ${ans.feedback}`);
+                            });
                         }
-                    });
+                        break;
                 }
-                console.log('─'.repeat(50) + '\n');
-
-                await text({ message: 'Press Enter to return to menu...', placeholder: '' });
+                console.log('─'.repeat(60) + '\n');
+                
+                await text({ message: 'Press Enter to return...', placeholder: '' });
                 break;
 
             // DELETE
@@ -234,7 +257,7 @@ async function main() {
                 }
                 break;
 
-            
+
             // EDIT
             case 'edit':
                 if (exam.questions.length === 0) {
@@ -255,7 +278,7 @@ async function main() {
 
                 if (typeof editId === 'number' && editId !== -1) {
                     const qToEdit = exam.questions[editId];
-                    
+
                     const field = await select({
                         message: `Editing "${qToEdit.title}". What do you want to change?`,
                         options: [
@@ -281,85 +304,136 @@ async function main() {
                     console.log("Question updated.");
                 }
                 break;
-                
-            
+
+
             // AJOUT (EFO3 : Selection / Ajout)
             case 'add':
-                const addMethod = await select({
-                    message: 'How do you want to add a question?',
+            const addMethod = await select({
+                message: 'How do you want to add questions?',
+                options: [
+                    { value: 'bank_all', label: 'Import EVERYTHING from SujetB_data (Mass Test)' }, // Nouvelle option
+                    { value: 'bank_select', label: 'Select file & questions from SujetB_data' },
+                    { value: 'manual', label: 'Create manually' },
+                    { value: 'cancel', label: '⬅ Cancel' }
+                ]
+            });
+
+            // OPTION 1 : IMPORT MASSIF (Idéal pour tester tous les types)
+            if (addMethod === 'bank_all') {
+                const dataDir = './SujetB_data';
+                
+                if (!fs.existsSync(dataDir)) {
+                    console.log(`Error: Directory ${dataDir} not found.`);
+                    break;
+                }
+
+                const sBulk = spinner();
+                sBulk.start('Scanning directory and parsing ALL files...');
+
+                try {
+                    // 1. Lister tous les fichiers .gift
+                    const files = fs.readdirSync(dataDir).filter(f => f.endsWith('.gift'));
+                    
+                    let totalAdded = 0;
+                    
+                    // 2. Boucler sur chaque fichier
+                    for (const file of files) {
+                        const fullPath = path.join(dataDir, file);
+                        const bankExam = parseGiftFile(fullPath);
+                        
+                        // 3. Ajouter toutes les questions
+                        for (const q of bankExam.questions) {
+                            if (exam.addQuestion(q)) {
+                                totalAdded++;
+                            }
+                        }
+                    }
+                    
+                    sBulk.stop(`Process complete.`);
+                    console.log(`Imported ${totalAdded} new questions from ${files.length} files.`);
+                    console.log(`(Duplicate questions were skipped automatically)`);
+
+                } catch (err) {
+                    sBulk.stop('Error during bulk import.');
+                    console.error(err);
+                }
+            }
+
+            // OPTION 2 : SELECTION FICHIER PAR FICHIER
+            else if (addMethod === 'bank_select') {
+                const dataDir = './SujetB_data';
+                if (!fs.existsSync(dataDir)) {
+                    console.log(`Directory not found.`);
+                    break;
+                }
+
+                // On liste les fichiers pour laisser l'utilisateur choisir
+                const files = fs.readdirSync(dataDir).filter(f => f.endsWith('.gift'));
+                
+                const selectedFile = await select({
+                    message: 'Choose a GIFT file to load:',
                     options: [
-                        { value: 'bank', label: 'Import from another GIFT file (Question Bank)' },
-                        { value: 'manual', label: 'Create manually' },
+                        ...files.map(f => ({ value: f, label: f })),
                         { value: 'cancel', label: '⬅ Cancel' }
                     ]
                 });
 
-                if (addMethod === 'bank') {
-                    // EFO3 : Sélection depuis une banque
-                    const bankPath = await text({
-                        message: 'Path to the GIFT file (Bank):',
-                        placeholder: './SujetB_data/U5-p57-Review.gift',
-                        validate(value) {
-                            if (!fs.existsSync(value)) return 'File not found';
-                        }
-                    });
+                if (selectedFile === 'cancel' || typeof selectedFile !== 'string') break;
 
-                    if (typeof bankPath === 'string') {
-                        const sBank = spinner();
-                        sBank.start('Loading bank...');
-                        const bankExam = parseGiftFile(bankPath);
-                        sBank.stop(`Loaded ${bankExam.questions.length} questions from bank.`);
+                const sLoad = spinner();
+                sLoad.start(`Loading ${selectedFile}...`);
+                const bankExam = parseGiftFile(path.join(dataDir, selectedFile));
+                sLoad.stop(`Loaded ${bankExam.questions.length} questions.`);
 
-                        const qIndexToAdd = await select({
-                            message: 'Select a question to IMPORT:',
-                            options: [
-                                ...bankExam.questions.map((q, idx) => ({
-                                    value: idx,
-                                    label: `${q.title} (${q.type})`
-                                })),
-                                { value: -1, label: '⬅ Cancel' }
-                            ]
-                        });
+                // Sélection de la question spécifique
+                const qIndexToAdd = await select({
+                    message: 'Select a question to IMPORT:',
+                    options: [
+                        ...bankExam.questions.map((q, idx) => ({
+                            value: idx,
+                            label: `${q.title.slice(0,50)} (${q.type})`
+                        })),
+                        { value: -1, label: '⬅ Cancel' }
+                    ]
+                });
 
-                        if (typeof qIndexToAdd === 'number' && qIndexToAdd !== -1) {
-                            const selectedQ = bankExam.questions[qIndexToAdd];
-                            // On vérifie les doublons (EFO4)
-                            if (exam.addQuestion(selectedQ)) {
-                                console.log(`Successfully added "${selectedQ.title}" to the exam.`);
-                            } else {
-                                console.log(`Error: This question is already in the exam (Duplicate).`);
-                            }
-                        }
+                if (typeof qIndexToAdd === 'number' && qIndexToAdd !== -1) {
+                    const selectedQ = bankExam.questions[qIndexToAdd];
+                    if (exam.addQuestion(selectedQ)) {
+                        console.log(`Added: "${selectedQ.title}"`);
+                    } else {
+                        console.log(`Duplicate question ignored.`);
                     }
-
-                } else if (addMethod === 'manual') {
-                    const qType = await select({
-                        message: 'Question Type:',
-                        options: [
-                            { value: QuestionType.Essay, label: 'Essay (Open question)' },
-                            { value: QuestionType.TrueFalse, label: 'True / False' },
-                            { value: QuestionType.Description, label: 'Description (Instruction)' }
-                        ]
-                    });
-
-                    const qTitle = await text({ message: 'Title:', placeholder: 'New Question' }) as string;
-                    const qText = await text({ message: 'Question Text:', placeholder: 'What is...?' }) as string;
-                    
-                    const newQ = new Question(qTitle, qText, qType as QuestionType);
-
-                    // Si Vrai/Faux, on demande la réponse
-                    if (qType === QuestionType.TrueFalse) {
-                        const tfVal = await select({
-                            message: 'Correct Answer:',
-                            options: [{ value: true, label: 'TRUE' }, { value: false, label: 'FALSE' }]
-                        });
-                        newQ.answers.push(new AnswerOption(tfVal ? "TRUE" : "FALSE", tfVal as boolean));
-                    }
-
-                    exam.addQuestion(newQ);
-                    console.log("New question created and added.");
                 }
-                break;
+            } 
+            
+            // OPTION 3 : MANUEL
+            else if (addMethod === 'manual') {
+                // ... (Garder votre code manuel existant ici) ...
+                const qType = await select({
+                    message: 'Question Type:',
+                    options: [
+                        { value: QuestionType.Essay, label: 'Essay (Open question)' },
+                        { value: QuestionType.TrueFalse, label: 'True / False' },
+                        { value: QuestionType.Description, label: 'Description (Instruction)' }
+                    ]
+                });
+                
+                const qTitle = await text({ message: 'Title:', placeholder: 'New Question' }) as string;
+                const qText = await text({ message: 'Question Text:', placeholder: 'What is...?' }) as string;
+                
+                const newQ = new Question(qTitle, qText, qType as QuestionType);
+                if (qType === QuestionType.TrueFalse) {
+                    const tfVal = await select({
+                        message: 'Correct Answer:',
+                        options: [{ value: true, label: 'TRUE' }, { value: false, label: 'FALSE' }]
+                    });
+                    newQ.answers.push(new AnswerOption(tfVal ? "TRUE" : "FALSE", tfVal as boolean));
+                }
+                exam.addQuestion(newQ);
+                console.log("New question created.");
+            }
+            break;
 
             case 'exit':
                 console.log("Goodbye!");
