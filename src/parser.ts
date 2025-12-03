@@ -4,16 +4,16 @@ import { Question, QuestionType, AnswerOption, Category, Exam } from './classes'
 export class GiftParser {
     private currentCategory: Category | null = null;
 
-    constructor() {}
+    constructor() { }
 
     public parse(filePath: string): Exam {
         const content = fs.readFileSync(filePath, 'utf-8');
         const exam = new Exam();
-        
+
         // Split lines and handle comments/categories
         const lines = content.split(/\r?\n/);
         const cleanLines: string[] = [];
-        
+
         for (let line of lines) {
             const trimmed = line.trim();
             // Skip comments
@@ -27,7 +27,7 @@ export class GiftParser {
         }
 
         const fullText = cleanLines.join('\n');
-        
+
         // Split by blank lines (standard GIFT separator)
         const blocks = fullText.split(/\n\s*\n+/).filter(b => b.trim().length > 0);
 
@@ -46,7 +46,7 @@ export class GiftParser {
         const path = line.replace('$CATEGORY:', '').trim();
         const parts = path.split('/').filter(p => p.length > 0);
         let parent: Category | null = null;
-        
+
         for (const part of parts) {
             parent = new Category(part, parent);
         }
@@ -56,7 +56,7 @@ export class GiftParser {
     private parseQuestionBlock(block: string): Question | null {
         block = block.trim();
         if (block.length === 0) return null;
-        
+
         // 1. Extract Title ::Title::
         let title = '';
         let text = block;
@@ -81,7 +81,7 @@ export class GiftParser {
         // Handle escaped braces if necessary (simple approach for now)
         const startIndex = text.indexOf('{');
         const endIndex = text.lastIndexOf('}');
-        
+
         if (startIndex === -1 || endIndex === -1) {
             // No answer block -> Description
             return new Question(title, text, QuestionType.Description, format, this.currentCategory);
@@ -118,15 +118,13 @@ export class GiftParser {
     }
 
     private parseAnswers(block: string): { type: QuestionType, answers: AnswerOption[] } {
-        // 1. Nettoyage : On supprime les sauts de ligne dans le bloc réponses pour faciliter le parsing
-        // Cela règle les problèmes avec les fichiers de SujetB qui formatent les réponses sur plusieurs lignes
+        // Nettoyage des sauts de ligne
         block = block.replace(/\r\n/g, ' ').replace(/\n/g, ' ').trim();
 
         const answers: AnswerOption[] = [];
-        let type = QuestionType.ShortAnswer; // Default
+        let type = QuestionType.ShortAnswer;
 
-        // Cas 1 : True/False {T} {FALSE}
-        // Regex stricte pour éviter de confondre avec un texte commençant par T
+        // 1. True/False
         const tfMatch = block.match(/^([TF]|TRUE|FALSE)$/i);
         if (tfMatch) {
             const content = tfMatch[1].toUpperCase();
@@ -136,7 +134,7 @@ export class GiftParser {
             return { type: QuestionType.TrueFalse, answers };
         }
 
-        // Cas 2 : Numerical {#3.14}
+        // 2. Numerical
         if (block.startsWith('#')) {
             type = QuestionType.Numerical;
             const val = block.substring(1).trim();
@@ -144,27 +142,24 @@ export class GiftParser {
             return { type, answers };
         }
 
-        // Cas 3 : Matching { =A -> B =C -> D }
+        // 3. Matching
         if (block.includes('->')) {
             type = QuestionType.Matching;
-            // On sépare par le signe '=' qui débute chaque paire
             const items = block.split('=').map(i => i.trim()).filter(i => i.length > 0);
             for (const item of items) {
                 const parts = item.split('->');
                 if (parts.length >= 2) {
                     const left = parts[0].trim();
-                    const right = parts.slice(1).join('->').trim(); // Au cas où il y aurait d'autres ->
-                    // On stocke la partie droite dans matchText
+                    const right = parts.slice(1).join('->').trim();
                     answers.push(new AnswerOption(left, true, null, null, right));
                 }
             }
             return { type, answers };
         }
 
-        // Cas 4 : Multiple Choice / Short Answer
-        // On sépare par ~ (mauvaise) ou = (bonne) tout en gardant le délimiteur
+        // 4. Multiple Choice / Short Answer (C'est ici que se trouve le correctif)
         const options = block.split(/(?=[~=])/).map(o => o.trim()).filter(o => o.length > 0);
-        
+
         let hasEquals = false;
         let hasTilde = false;
 
@@ -182,21 +177,25 @@ export class GiftParser {
                 text = opt.substring(1).trim();
             }
 
-            // Gestion du poids (ex: %50%)
+            // Poids (%50%)
             const weightMatch = text.match(/^%(-?\d+(\.\d+)?)%/);
             if (weightMatch) {
                 weight = parseFloat(weightMatch[1]);
                 text = text.substring(weightMatch[0].length).trim();
-                // Si 100%, c'est correct
                 if (weight === 100) isCorrect = true;
             }
 
-            // Gestion du feedback (#)
+            // Feedback (#)
             const feedbackIndex = text.indexOf('#');
             if (feedbackIndex !== -1) {
                 feedback = text.substring(feedbackIndex + 1).trim();
                 text = text.substring(0, feedbackIndex).trim();
             }
+
+            // --- CORRECTIF DU BUG "F EN TROP" ---
+            // Si le texte est vide après nettoyage (ex: le résidu d'un "~="), on l'ignore.
+            if (text.length === 0) continue;
+            // ------------------------------------
 
             if (isCorrect) hasEquals = true;
             else hasTilde = true;
@@ -207,7 +206,7 @@ export class GiftParser {
         if (hasTilde && hasEquals) {
             type = QuestionType.MultipleChoice;
         } else if (hasTilde && !hasEquals) {
-            type = QuestionType.MultipleChoice; // QCM sans bonne réponse explicite (rare mais possible)
+            type = QuestionType.MultipleChoice;
         } else if (!hasTilde && hasEquals) {
             type = QuestionType.ShortAnswer;
         }
