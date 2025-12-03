@@ -118,47 +118,51 @@ export class GiftParser {
     }
 
     private parseAnswers(block: string): { type: QuestionType, answers: AnswerOption[] } {
+        // 1. Nettoyage : On supprime les sauts de ligne dans le bloc réponses pour faciliter le parsing
+        // Cela règle les problèmes avec les fichiers de SujetB qui formatent les réponses sur plusieurs lignes
+        block = block.replace(/\r\n/g, ' ').replace(/\n/g, ' ').trim();
+
         const answers: AnswerOption[] = [];
         let type = QuestionType.ShortAnswer; // Default
 
-        // True/False: {T} {FALSE}
-        const tfMatch = block.match(/^\s*(T|TRUE|F|FALSE)\s*$/i);
+        // Cas 1 : True/False {T} {FALSE}
+        // Regex stricte pour éviter de confondre avec un texte commençant par T
+        const tfMatch = block.match(/^([TF]|TRUE|FALSE)$/i);
         if (tfMatch) {
-            const isTrue = tfMatch[1].toUpperCase().startsWith('T');
+            const content = tfMatch[1].toUpperCase();
+            const isTrue = content === 'T' || content === 'TRUE';
             answers.push(new AnswerOption("True", isTrue));
             answers.push(new AnswerOption("False", !isTrue));
             return { type: QuestionType.TrueFalse, answers };
         }
 
-        // Numerical: {#3.14}
-        if (block.trim().startsWith('#')) {
+        // Cas 2 : Numerical {#3.14}
+        if (block.startsWith('#')) {
             type = QuestionType.Numerical;
-            const val = block.trim().substring(1).trim();
+            const val = block.substring(1).trim();
             answers.push(new AnswerOption(val, true));
             return { type, answers };
         }
 
-        // Matching: { =A -> B =C -> D }
+        // Cas 3 : Matching { =A -> B =C -> D }
         if (block.includes('->')) {
             type = QuestionType.Matching;
-            // Split by '=' but ignore '=' inside text if possible? 
-            // Matching items usually start with '='.
-            const items = block.split(/(?==)/).map(i => i.trim()).filter(i => i.length > 0);
+            // On sépare par le signe '=' qui débute chaque paire
+            const items = block.split('=').map(i => i.trim()).filter(i => i.length > 0);
             for (const item of items) {
-                const content = item.replace(/^=/, '').trim();
-                const parts = content.split('->');
+                const parts = item.split('->');
                 if (parts.length >= 2) {
                     const left = parts[0].trim();
-                    const right = parts.slice(1).join('->').trim();
+                    const right = parts.slice(1).join('->').trim(); // Au cas où il y aurait d'autres ->
+                    // On stocke la partie droite dans matchText
                     answers.push(new AnswerOption(left, true, null, null, right));
                 }
             }
             return { type, answers };
         }
 
-        // Multiple Choice / Short Answer
-        // Split by ~ (distractor) or = (correct)
-        // Regex lookahead to split but keep delimiter
+        // Cas 4 : Multiple Choice / Short Answer
+        // On sépare par ~ (mauvaise) ou = (bonne) tout en gardant le délimiteur
         const options = block.split(/(?=[~=])/).map(o => o.trim()).filter(o => o.length > 0);
         
         let hasEquals = false;
@@ -178,24 +182,21 @@ export class GiftParser {
                 text = opt.substring(1).trim();
             }
 
-            // Check for weight: %50%
+            // Gestion du poids (ex: %50%)
             const weightMatch = text.match(/^%(-?\d+(\.\d+)?)%/);
             if (weightMatch) {
                 weight = parseFloat(weightMatch[1]);
                 text = text.substring(weightMatch[0].length).trim();
+                // Si 100%, c'est correct
                 if (weight === 100) isCorrect = true;
             }
 
-            // Check for feedback: #Feedback
-            // Use lastIndexOf to avoid splitting feedback inside feedback? 
-            // GIFT spec says feedback starts with #.
+            // Gestion du feedback (#)
             const feedbackIndex = text.indexOf('#');
             if (feedbackIndex !== -1) {
                 feedback = text.substring(feedbackIndex + 1).trim();
                 text = text.substring(0, feedbackIndex).trim();
             }
-
-            if (text.length === 0) continue;
 
             if (isCorrect) hasEquals = true;
             else hasTilde = true;
@@ -206,8 +207,7 @@ export class GiftParser {
         if (hasTilde && hasEquals) {
             type = QuestionType.MultipleChoice;
         } else if (hasTilde && !hasEquals) {
-            // Only distractors?
-            type = QuestionType.MultipleChoice;
+            type = QuestionType.MultipleChoice; // QCM sans bonne réponse explicite (rare mais possible)
         } else if (!hasTilde && hasEquals) {
             type = QuestionType.ShortAnswer;
         }
