@@ -2,7 +2,12 @@
 
 ---
 
-Ce projet fait l'objet d'un outil de gestion, simulation et analyse de fichiers GIFT demandé par le SRYEM dans le cadre du module GL02.
+
+L’objectif principal de l’outil est de permettre à un enseignant de **composer un examen complet** au format GIFT en sélectionnant des questions issues de la banque officielle fournie dans `SujetB_data/`.
+
+Chaque fichier `.gift` du dossier représente un **exercice thématique** contenant plusieurs questions.
+Un examen réglementaire du SRYEM doit contenir **entre 15 et 20 questions**, sans doublons.
+
 
 
 ##  Couverture fonctionnelle
@@ -151,5 +156,123 @@ Depuis ce menu, vous pouvez :
 - analyser le profil du test  
 - exporter un examen en fichier GIFT   
 - générer une vCard 
+
+---
+
+#  Composition d’un examen à partir de la banque nationale SRYEM
+
+---
+
+##  1. Charger un premier fichier GIFT
+
+Depuis le menu initial :
+
+```
+Edit an existing Gift file
+```
+
+Sélectionnez un fichier de `SujetB_data/`.
+Ce premier fichier sert de **base** : ses questions remplissent initialement l’examen en cours.
+
+Utilisez ensuite `List all questions` pour visualiser le contenu actuel.
+
+---
+
+##  2. Ajouter des questions depuis la banque SRYEM
+
+Dans le menu principal :
+
+```
+Add a new question
+→ Select file & questions from SujetB_data
+```
+
+Vous pouvez alors :
+
+* parcourir les fichiers de la banque
+* afficher leurs questions
+* importer celles que vous souhaitez ajouter à votre examen
+
+Les doublons sont automatiquement détectés et **ignorés**.
+
+Vous pouvez répéter l’opération autant que nécessaire jusqu’à obtenir **15 à 20 questions**.
+
+---
+
+##  3. Vérifier la composition de votre examen
+
+À tout moment, utilisez :
+
+```
+List all questions
+```
+
+pour vérifier :
+
+* le nombre total de questions
+* leur type et leur ordre
+* l’absence de doublons
+
+C’est l’outil lui-même qui garantit la conformité avec la règle **15 ≤ nombre de questions ≤ 20** lors de l’export.
+
+---
+
+##  4. Exporter l’examen final
+
+Lorsque l’examen est complet :
+
+```
+Export exam to GIFT file
+```
+
+L’outil vérifie automatiquement les contraintes du SRYEM :
+
+* examen entre 15 et 20 questions
+* absence de doublons
+* format conforme Moodle
+
+Si tout est correct, un fichier `.gift` est généré (ex : `./my-exam.gift`).
+Ce fichier peut ensuite être chargé à nouveau, envoyé ou déployé sur un serveur Moodle.
+
+---
+
+## 5. Simuler la passation d’un examen 
+
+Pour vérifier ou tester l’examen :
+
+```
+Simulate exam
+```
+
+L’utilisateur répond de manière interactive à chaque question.
+Les réponses sont enregistrées uniquement pour la session courante.
+
+---
+
+##  6. Afficher le bilan de passation 
+
+Après une simulation :
+
+```
+Show exam summary
+```
+
+L’outil affiche :
+
+* les réponses correctes / incorrectes
+* le score global sur 20
+* la liste des questions notées et non notées
+
+---
+
+##  7. Analyser le profil de l’examen 
+
+Via :
+
+```
+Analyze exam profile
+```
+
+L’outil génère un histogramme textuel représentant la **répartition des types de questions**.
 
 ---
