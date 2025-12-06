@@ -47,6 +47,8 @@ async function main() {
     // artificial delay to see the spinner
     await new Promise(resolve => setTimeout(resolve, 600));
 
+    // Stockage des réponses utilisateur pour la simulation 
+    const userAnswers: Map<number, string> = new Map();
     s.stop('Successfully parsed the Gift file');
 
 
@@ -56,8 +58,9 @@ async function main() {
             message: 'What do you want to do?',
             options: [
                 { value: 'list', label: 'List all questions' },
-                { value: 'search', label: 'Search questions' }, // <--- NOUVEAU (EFO1)
+                { value: 'search', label: 'Search questions' }, // <---  (EFO1)
                 { value: 'view', label: 'View question details' }, // <--- EFO2
+                { value: 'simulate', label: 'Simulate exam (EF08)' }, // <---  (EFO8)
                 { value: 'edit', label: 'Edit a question' },
                 { value: 'add', label: 'Add a new question' },
                 { value: 'delete', label: 'Delete a question' },
@@ -257,6 +260,104 @@ async function main() {
                 }
                 break;
 
+            // EF08 : Simulation de passation d'examen
+            case 'simulate':
+                if (exam.questions.length === 0) {
+                    console.log('\nNo questions in the exam, nothing to simulate.');
+                    break;
+                }
+
+                console.log('\n=== EXAM SIMULATION ===');
+                userAnswers.clear();
+
+                for (let i = 0; i < exam.questions.length; i++) {
+                    const q = exam.questions[i];
+                    console.log('\n' + '-'.repeat(60));
+                    console.log(`Q${i + 1} [${q.type}]`);
+                    console.log(q.text);
+
+                    // Affichage des réponses possibles quand il y en a
+                    if (q.answers && q.answers.length > 0 && q.type !== QuestionType.TrueFalse) {
+                        q.answers.forEach((ans, idx) => {
+                            console.log(`  ${idx + 1}) ${ans.text}`);
+                        });
+                    }
+
+                    let answerStr: string;
+
+                    // Gestion spécifique TRUE/FALSE
+                    if (q.type === QuestionType.TrueFalse) {
+                        const tfChoice = await select({
+                            message: 'Your answer:',
+                            options: [
+                                { value: 'TRUE',  label: 'TRUE' },
+                                { value: 'FALSE', label: 'FALSE' },
+                            ]
+                        });
+                        answerStr = String(tfChoice);
+                    } else {
+                        const raw = await text({
+                            message: 'Your answer (text or number):',
+                            placeholder: '1'
+                        });
+                        answerStr = typeof raw === 'string' ? raw.trim() : '';
+                    }
+
+                    userAnswers.set(i, answerStr);
+                }
+
+                console.log('\nSimulation finished. You can now see the summary with "Show exam summary".');
+                break;
+                        // EF09 : Bilan des réponses après simulation
+            case 'summary':
+                if (exam.questions.length === 0) {
+                    console.log('\nNo exam loaded.');
+                    break;
+                }
+                if (userAnswers.size === 0) {
+                    console.log('\nNo simulation done yet (EF08).');
+                    break;
+                }
+
+                console.log('\n=== EXAM SUMMARY (EF09) ===');
+
+                let graded = 0;
+                let correctCount = 0;
+
+                exam.questions.forEach((q, idx) => {
+                    const user = userAnswers.get(idx);
+                    const correctOptions = q.answers?.filter(a => a.isCorrect) ?? [];
+
+                    // Cas non noté : pas de bonne réponse définie (description, etc.)
+                    if (!user || correctOptions.length === 0) {
+                        console.log(`Q${idx + 1}: Not graded (no correct answer defined)`);
+                        return;
+                    }
+
+                    graded++;
+
+                    // On simplifie : une seule bonne réponse "principale"
+                    const mainCorrect = correctOptions[0];
+                    const normalizedUser = user.trim().toUpperCase();
+                    const normalizedCorrect = mainCorrect.text.trim().toUpperCase();
+
+                    const isCorrect = normalizedUser === normalizedCorrect;
+                    if (isCorrect) correctCount++;
+
+                    console.log(
+                        `Q${idx + 1}: ${isCorrect ? 'Correct' : 'Incorrect'} ` +
+                        `(your answer: "${user}", correct: "${mainCorrect.text}")`
+                    );
+                });
+
+                console.log('\n--- Summary ---');
+                console.log(`Graded questions: ${graded}/${exam.questions.length}`);
+                console.log(`Correct answers:  ${correctCount}/${graded}`);
+                if (graded > 0) {
+                    const score = (correctCount / graded) * 20;
+                    console.log(`Score (on 20):   ${score.toFixed(2)}`);
+                }
+                break;
 
             // EDIT
             case 'edit':
