@@ -60,7 +60,8 @@ async function main() {
                 { value: 'list', label: 'List all questions' },
                 { value: 'search', label: 'Search questions' }, // <---  (EFO1)
                 { value: 'view', label: 'View question details' }, // <--- EFO2
-                { value: 'simulate', label: 'Simulate exam (EF08)' }, // <---  (EFO8)
+                { value: 'simulate', label: 'Simulate exam' }, // <---  (EFO8)
+                { value: 'summary',  label: 'Show exam summary' }, // <---  (EFO9)
                 { value: 'edit', label: 'Edit a question' },
                 { value: 'add', label: 'Add a new question' },
                 { value: 'delete', label: 'Delete a question' },
@@ -308,18 +309,18 @@ async function main() {
 
                 console.log('\nSimulation finished. You can now see the summary with "Show exam summary".');
                 break;
-                        // EF09 : Bilan des réponses après simulation
+            // EF09 : Bilan des réponses après simulation
             case 'summary':
                 if (exam.questions.length === 0) {
                     console.log('\nNo exam loaded.');
                     break;
                 }
                 if (userAnswers.size === 0) {
-                    console.log('\nNo simulation done yet (EF08).');
+                    console.log('\nNo simulation done yet.');
                     break;
                 }
 
-                console.log('\n=== EXAM SUMMARY (EF09) ===');
+                console.log('\n=== EXAM SUMMARY ===');
 
                 let graded = 0;
                 let correctCount = 0;
