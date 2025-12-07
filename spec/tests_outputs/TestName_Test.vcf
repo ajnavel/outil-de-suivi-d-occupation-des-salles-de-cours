@@ -1,0 +1,8 @@
+BEGIN:VCARD
+VERSION:4.0
+FN:TestName Test
+N:Test;TestName;;;
+EMAIL:Test.TestName@school.sealand
+ORG:SRYEM
+TEL:+33 6 12 34 56 77
+END:VCARD
