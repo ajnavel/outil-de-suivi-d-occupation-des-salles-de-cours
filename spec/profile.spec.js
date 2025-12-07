@@ -5,10 +5,11 @@ describe("Exam Profile (EF10)", () => {
   it("builds correct statistics of question types", () => {
     const exam = new Exam();
 
-    exam.addQuestion(new Question("A", "T", QuestionType.MultipleChoice));
-    exam.addQuestion(new Question("B", "T", QuestionType.MultipleChoice));
-    exam.addQuestion(new Question("C", "T", QuestionType.TrueFalse));
-    exam.addQuestion(new Question("D", "T", QuestionType.Description));
+    exam.addQuestion(new Question("A", "MC 1", QuestionType.MultipleChoice));
+    exam.addQuestion(new Question("B", "MC 2", QuestionType.MultipleChoice)); 
+    exam.addQuestion(new Question("C", "TF 1", QuestionType.TrueFalse));
+    exam.addQuestion(new Question("D", "DESC 1", QuestionType.Description));
+
 
     const stats = {};
     exam.questions.forEach(q => {

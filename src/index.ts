@@ -62,6 +62,7 @@ async function main() {
                 { value: 'view', label: 'View question details' }, // <--- EFO2
                 { value: 'simulate', label: 'Simulate exam' }, // <---  (EFO8)
                 { value: 'summary',  label: 'Show exam summary' }, // <---  (EFO9)
+                { value: 'profile',  label: 'Analyze exam profile' }, // <-- (EF10)
                 { value: 'edit', label: 'Edit a question' },
                 { value: 'add', label: 'Add a new question' },
                 { value: 'delete', label: 'Delete a question' },
@@ -262,6 +263,7 @@ async function main() {
                 break;
 
             // EF08 : Simulation de passation d'examen
+                        // EF08 : Simulation de passation d'examen
             case 'simulate':
                 if (exam.questions.length === 0) {
                     console.log('\nNo questions in the exam, nothing to simulate.');
@@ -271,8 +273,25 @@ async function main() {
                 console.log('\n=== EXAM SIMULATION ===');
                 userAnswers.clear();
 
-                for (let i = 0; i < exam.questions.length; i++) {
-                    const q = exam.questions[i];
+                // On prépare la liste des questions à poser
+                const allQuestions = [...exam.questions];
+
+                // Mélange simple (Fisher–Yates)
+                for (let i = allQuestions.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [allQuestions[i], allQuestions[j]] = [allQuestions[j], allQuestions[i]];
+                }
+
+                // Nombre de questions à poser (max 20)
+                const MAX_QUESTIONS = 20;
+                const questionsToAsk = allQuestions.slice(0, Math.min(MAX_QUESTIONS, allQuestions.length));
+
+                console.log(`\nThis simulation will ask you ${questionsToAsk.length} question(s).`);
+
+                for (let i = 0; i < questionsToAsk.length; i++) {
+                    const q = questionsToAsk[i];
+                    const originalIndex = exam.questions.indexOf(q); // pour recoller avec userAnswers
+
                     console.log('\n' + '-'.repeat(60));
                     console.log(`Q${i + 1} [${q.type}]`);
                     console.log(q.text);
@@ -286,7 +305,6 @@ async function main() {
 
                     let answerStr: string;
 
-                    // Gestion spécifique TRUE/FALSE
                     if (q.type === QuestionType.TrueFalse) {
                         const tfChoice = await select({
                             message: 'Your answer:',
@@ -304,11 +322,13 @@ async function main() {
                         answerStr = typeof raw === 'string' ? raw.trim() : '';
                     }
 
-                    userAnswers.set(i, answerStr);
+                    // On stocke par rapport à l'indice ORIGINAL de la question
+                    userAnswers.set(originalIndex, answerStr);
                 }
 
                 console.log('\nSimulation finished. You can now see the summary with "Show exam summary".');
                 break;
+
             // EF09 : Bilan des réponses après simulation
             case 'summary':
                 if (exam.questions.length === 0) {
@@ -358,6 +378,32 @@ async function main() {
                     const score = (correctCount / graded) * 20;
                     console.log(`Score (on 20):   ${score.toFixed(2)}`);
                 }
+                break;
+            // EF10 : Analyse du profil de test
+            case 'profile':
+                if (exam.questions.length === 0) {
+                    console.log('\nNo exam loaded to analyze.');
+                    break;
+                }
+
+                console.log('\n=== EXAM PROFILE ===');
+
+                const stats: Record<string, number> = {};
+                exam.questions.forEach(q => {
+                    const key = String(q.type);
+                    stats[key] = (stats[key] || 0) + 1;
+                });
+
+                const total = exam.questions.length;
+
+                Object.entries(stats).forEach(([type, count]) => {
+                    const pct = (count / total) * 100;
+                    // Petit histogramme textuel
+                    const bar = '#'.repeat(Math.round(pct / 5)); // 1 # = 5%
+                    console.log(`${type.padEnd(15)} : ${count.toString().padStart(3)}  (${pct.toFixed(1)}%)  ${bar}`);
+                });
+
+                console.log(`\nTotal questions: ${total}`);
                 break;
 
             // EDIT

@@ -179,7 +179,7 @@ export class Question {
 // Represents the Exam (collection of questions)
 // Implements 'EnsQuestion' (Ensemble de Questions) [cite: 242-244]
 export class Exam {
-    public questions: Question[];
+    public questions: Question[] = [];
 
     constructor() {
         this.questions = [];
@@ -208,7 +208,8 @@ export class Exam {
 
     // Check if exam is valid for export
     isValid(): boolean {
-        const count = this.card();
-        return count >= 15 && count <= 20;
-    }
+    const n = this.questions.length;
+    // Examen réglementaire : entre 15 et 20 questions inclus
+    return n >= 15 && n <= 20;
+  }
 }
