@@ -276,3 +276,19 @@ Analyze exam profile
 L’outil génère un histogramme textuel représentant la **répartition des types de questions**.
 
 ---
+
+###  Tests unitaires
+Les tests unitaires ont été réalisés avec **Jasmine**.  
+Ils sont situés dans le dossier `/spec` et couvrent les principales fonctionnalités :
+
+- parsing GIFT
+- gestion des doublons
+- validation des contraintes institutionnelles (15–20 questions)
+- export GIFT
+- analyse statistique du profil d’examen
+
+Les tests s’exécutent via :
+```
+npm run build
+npm test
+```
