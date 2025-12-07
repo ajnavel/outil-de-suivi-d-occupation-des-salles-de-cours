@@ -1,0 +1,118 @@
+::EM U5 p34 Voc1.0::Complete sentences with the words in the list.
+
+::EM U5 p34 Voc1.1::I never eat meat — I follow a strict _____ diet. {
+	~high-fat
+	~low-salt
+	=vegetarian
+	~vitamins
+	~well-balanced
+}
+
+::EM U5 p34 Voc1.2::People who are overweight are rarely told to follow a _____ diet. {
+	=high-fat
+	~low-salt
+	~vegetarian
+	~vitamins
+	~well-balanced
+}
+
+::EM U5 p34 Voc1.3::It’s good to give children a _____ diet, including meat, frurt and sugar. {
+	~high-fat
+	~low-salt
+	~vegetarian
+	~vitamins
+	=well-balanced
+}
+
+::EM U5 p34 Voc1.4::love frurt, vegetables and so on, I know I’m getting a diet rich in _____ . {
+	~high-fat
+	~low-salt
+	~vegetarian
+	=vitamins
+	~well-balanced
+}
+
+::EM U5 p34 Voc1.5::Older people may be advised to follow a _____ diet for health reasons. {
+	~high-fat
+	=low-salt
+	~vegetarian
+	~vitamins
+	~well-balanced
+}
+
+::EM U5 p35 Gra3.0 Subject/verb agreement::Choose the correct options to complete the sentences.
+
+::EM U5 p35 Gra3.1::Eating too much sugar _____ bad for young children. {
+	=is
+	~are
+}
+
+::EM U5 p37 Reading 1.0 Text::[html]<p><i>You are going to read an article about a woman who tried out a new kind of food. Read the text once quickly and answer the first question below.</i></p>
+  <p>Last week, I posted a picture of my supper on Facebook. Never before has a post about a meal drawn so much <u>controversy</u> from friends. The reason? I was about to tuck into some Huel, a vegan powdered food that claims to contain everything the body needs, according to current government guidelines on <u>nutrition</u>.</p>
+  <p>This was on day 10 of my journey with Huel, the powdered food which has become something of a sensation. It sold out three times in the first month after its launch last year. Company founder Julian Hearn said his plan was not to replace food in our diets, but to offer a healthy, sustainable alternative to junk food and ready meals. After taking the stuff for three weeks it’s a concept I've surprised myself by buying into – and I’m not alone. Some 400,000 Huel meals have been sold since June, in more than 30 countries. Huel comes in a large, plain white bag with a scoop and instructions. One level scoop of Huel (38g) equates to 156 calories. You’re advised to use an online calorie counter to calculate how many calories you should be consuming. At 167 cm and 63 kg and with a very active lifestyle, I need 2,233 calories daily to maintain my weight. I began my adventure with Huel one busy evening when, <u>engrossed</u> in work, I didn’t want to stop to cook.</p>
+  <p>The instructions suggest adding some flavour when you start and to introduce Huel slowly. I blended three scoops with 550ml of water and a banana: a ‘meal’, according to the packet, and the equivalent of eating a sandwich. The first gulp of creamy, vanilla-tasting liquid seemed harmless, but the following sips got smaller as I <u>struggled</u> to swallow it and couldn’t finish, mainly because I found it so filling. Not eating felt strange but I went to bed feeling satisfied and with no ill effects. Ordinarily, I eat very healthy meals, so I notice when I’ve consumed any kind of junk but not with Huel, despite feeling rather worried when I looked at the lists on the label. The main ingredients are oats, pea protein, brown rice protein and flaxseeds followed by what looked like a load of chemicals. [line 38] According to Julian Hearn these provide vitamins and minerals.</p
+  <p>Over the first few days, I hated the sugary smell of Huel and its sweet taste, [line 40] but by the end of the week, I’d got the hang of it: one meal a day, best consumed for breakfast. I found it really useful during a busy working week. It was highly convenient having my dishwasher virtually unused and my rubbish bin empty. Besides, because I intentionally restricted my calorie intake to rid my body of some excess weight I’d put on over Christmas, by the end of the week I had lost 3 kilos.</p>
+  <p>Week two was harder. On two Huel meals a day I started to really miss eating. I love cooking and eating is a highly social occasion for me. But when I did sit down to a proper meal, I savoured every single mouthful. Huel had <u>heightened</u> my appreciation for food. Most encouragingly though, I was feeling great. There was no difference in energy levels at the gym and my body tolerated it well.</p>
+  <p>In week three, I managed two full days of only Huel before I broke. I missed mealtimes and the <u>therapy</u> of cooking after a long day. But even with the experiment over, I continued with one Huel meal a day – especially when on the run, which is exactly how the powder is meant to be used.</p>
+  <p>Ironically, if I’d posted a picture of a burger from a fast-food chain on my Facebook page, it would have attracted plenty of thumbs up – but it’s junk. Huel, in my opinion, is not.</p>
+
+::U1 p7 Adverbs GR 1.0::Add the adverb in brackets to the correct place in each sentence.
+
+::U1 p7 Adverbs GR 1.1::[html]Does she come by car? (<i>generally</i>) {
+	=Does she generally come by car?
+}
+
+::U2 p22 6.1a – Verb patterns -ing or inf::My mother stopped _____ lunch because the phone rang. {
+	=making
+	~to make
+}
+
+::What sports do you get excited {1:MC:~with~=about}...::What sports do you get excited _____ ? Who do you find embarrassing? {
+	~1:MC:
+	~with
+	=about}? What sports do you find exciting? Do you ever get frustrated {1:MC:
+	~on
+	=with} a sportsperson/team? Which person/team do you find frustrating? Who are you impressed {1:MC:
+	=by
+	~for}? Who do you find impressive? Who or what do you get annoyed {1:MC:
+	~of
+	=by}? What do you sometimes feel embarrassed {1:MC:
+	~in
+	=by
+}
+
+::U5 p49 11.0 Subject-verb agreement::Choose the correct option.
+
+::U6 p59 Voc10.2 the arts::[html]<small><p><i>Complete the sentence with one of the following words: <b>abstract • blockbusters • cast • contemporary • gallery • productions</b>.</i></p></small>
+<p>I sometimes nip into an art _____ or exhibition during my lunch break.</p> {
+	=gallery
+}
+
+::U5 p54 6.2 Passive::[html]Most people think monkeys are a huge tourist attraction. <b>BE</b> <br />
+Monkeys _____ a huge tourist attraction by most people. {
+	=are thought to be
+}
+
+::U5 p57 Rev1.8::The price of co!ee _____ by more than 20 percent last year. {
+	~raised
+	=increased
+	~expanded
+	~doubled
+}
+
+::U8 p84 Voc Linking words 5.8::I enjoyed my time at the law firm. I made a lot of friends there _____ . {
+	=too.
+}
+
+::U9 p94 Listening 4.1::Max says that top sportspeople usually believe their success is due to {
+	~good fortune.
+	=hard work.
+	~raw talent.
+}
+
+::U7 p79 Review 3.5::It's a very ___________ location, cut off from the outside world.<div id\="gtx-trans" style\="position\: absolute; left\: 76px; top\: 23px;"> </div> {
+	~alone
+	~far
+	=remote
+	~unconnected
+}
