@@ -1,10 +1,10 @@
 export default {
   spec_dir: "spec",
   spec_files: [
-    "**/*.spec.ts"    
+    "**/*.spec.js"    // on cherche des .spec.js maintenant
   ],
   helpers: [
-    "../node_modules/ts-node/register",  
+    // pas de ts-node, plus simple
   ],
   env: {
     stopSpecOnExpectationFailure: false,
