@@ -4,77 +4,71 @@ function parseCRU(content) {
   const rawLines = content.split(/\r?\n/);
   const creneaux = [];
   let currentCourse = null;
-  let lineNumber = 0;
 
   for (const raw of rawLines) {
-    lineNumber++;
     const line = raw.trim();
-    if (line === '') continue;  // Ignore lignes vides
+    if (line === '') continue;
 
-    // Ligne de code de cours (ex: "ME01")
-    if (!line.includes(',')) {
-      currentCourse = line;
+    // Détection du code de l'UE (ex: +GE04)
+    if (line.startsWith('+')) {
+      currentCourse = line.substring(1).trim();
       continue;
     }
 
-    const parts = line.split(',').map(p => p.trim());
-
-    // On attend 9 champs pour un créneau CRU bien formé
-    if (parts.length !== 9) {
-      throw new Error(`Ligne CRU invalide à la ligne ${lineNumber}: "${line}"`);
+    // On ignore les lignes qui ne ressemblent pas à un créneau (ex: commentaires, headers)
+    // Un créneau commence généralement par un chiffre suivi d'une virgule
+    if (!/^\d+,/.test(line)) {
+      continue;
     }
 
-    if (!currentCourse) {
-      throw new Error(`Ligne CRU sans code de cours à la ligne ${lineNumber}: "${line}"`);
+    // Format attendu: 1,C1,P=56,H=L 14:00-16:00,F1,S=B101//
+    const parts = line.split(',');
+    if (parts.length < 6) {
+      // Ligne mal formée ou format inconnu
+      continue;
     }
 
-    const [
-      index,
-      kind,
-      subgrp,
-      capacityRaw,
-      schedule,
-      day,
-      timeRange,
-      filiere,
-      room
-    ] = parts;
+    const type = parts[1].trim(); // C1, D1, T1...
+    const capacityRaw = parts[2].trim(); // P=56
+    const scheduleRaw = parts[3].trim(); // H=L 14:00-16:00
+    const group = parts[4].trim(); // F1, F2...
+    const roomRaw = parts[5].trim(); // S=B101//
 
-    // Vérif format horaire "HHMM-HHMM"
-    const m = /^(\d{4})-(\d{4})$/.exec(timeRange);
-    if (!m) {
-      throw new Error(`Heure invalide à la ligne ${lineNumber}: "${timeRange}"`);
+    // Parsing de la capacité
+    const capacityMatch = capacityRaw.match(/P=(\d+)/);
+    const capacity = capacityMatch ? parseInt(capacityMatch[1], 10) : 0;
+
+    // Parsing de l'horaire (Jour et Heure)
+    // Ex: H=L 14:00-16:00 ou H=ME 8:00-10:00
+    const scheduleMatch = scheduleRaw.match(/H=([A-Z]{1,2})\s+(\d{1,2}:\d{2})-(\d{1,2}:\d{2})/);
+    
+    let day = '';
+    let start = '';
+    let end = '';
+
+    if (scheduleMatch) {
+      day = scheduleMatch[1];
+      start = scheduleMatch[2];
+      end = scheduleMatch[3];
     }
 
-    const start = m[1];
-    const end = m[2];
+    // Parsing de la salle
+    // Ex: S=B101//
+    const roomMatch = roomRaw.match(/S=(.+?)\/\//);
+    const room = roomMatch ? roomMatch[1] : '';
 
-    // Vérif capacité > 0
-    const capacityStr = capacityRaw.replace(/^P/, '');
-    const capacity = Number(capacityStr);
-    if (!Number.isFinite(capacity) || capacity <= 0) {
-      throw new Error(`Capacité invalide à la ligne ${lineNumber}: "${capacityRaw}"`);
+    if (currentCourse) {
+      creneaux.push({
+        courseCode: currentCourse,
+        type,
+        capacity,
+        day,
+        start,
+        end,
+        group,
+        room
+      });
     }
-
-    // (Optionnel NF3) Vérif jour dans l’ensemble attendu
-    const joursValides = ['L', 'MA', 'ME', 'J', 'V'];
-    if (!joursValides.includes(day)) {
-      throw new Error(`Jour invalide à la ligne ${lineNumber}: "${day}"`);
-    }
-
-    creneaux.push({
-      index,
-      courseCode: currentCourse,
-      kind,
-      subgrp,
-      capacity,
-      schedule,
-      day,
-      start,
-      end,
-      filiere,
-      room
-    });
   }
 
   return creneaux;
